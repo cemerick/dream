@@ -290,6 +290,7 @@ type tls_library = {
   create_handler :
     certificate_file:string ->
     key_file:string ->
+    httpaf_config:Httpaf.Config.t ->
     handler:Message.handler ->
     error_handler:Catch.error_handler ->
       Unix.sockaddr ->
@@ -300,10 +301,12 @@ type tls_library = {
 let no_tls = {
   create_handler = begin fun
       ~certificate_file:_ ~key_file:_
+      ~httpaf_config
       ~handler
-      ~error_handler ->
+      ~error_handler
+      ->
     Httpaf_lwt_unix.Server.create_connection_handler
-      ?config:None
+      ~config:httpaf_config
       ~request_handler:(wrap_handler false error_handler handler)
       ~error_handler:(Error_handler.httpaf error_handler)
   end;
@@ -312,12 +315,13 @@ let no_tls = {
 let openssl = {
   create_handler = begin fun
       ~certificate_file ~key_file
+      ~httpaf_config
       ~handler
       ~error_handler ->
 
     let httpaf_handler =
       Httpaf_lwt_unix.Server.SSL.create_connection_handler
-        ?config:None
+        ~config:httpaf_config
       ~request_handler:(wrap_handler true error_handler handler)
       ~error_handler:(Error_handler.httpaf error_handler)
     in
@@ -371,11 +375,12 @@ let openssl = {
 let ocaml_tls = {
   create_handler = fun
       ~certificate_file ~key_file
+      ~httpaf_config
       ~handler
       ~error_handler ->
     Httpaf_lwt_unix.Server.TLS.create_connection_handler_with_default
       ~certfile:certificate_file ~keyfile:key_file
-      ?config:None
+      ~config:httpaf_config
       ~request_handler:(wrap_handler true error_handler handler)
       ~error_handler:(Error_handler.httpaf error_handler)
 }
@@ -399,6 +404,7 @@ let serve_with_details
     ~certificate_file
     ~key_file
     ~builtins
+    ~httpaf_config
     user's_dream_handler =
 
   (* TODO DOC *)
@@ -416,6 +422,7 @@ let serve_with_details
     tls_library.create_handler
       ~certificate_file
       ~key_file
+      ~httpaf_config
       ~handler:user's_dream_handler
       ~error_handler
   in
@@ -483,6 +490,7 @@ let serve_with_maybe_https
     ~tls
     ?certificate_file ?key_file
     ?certificate_string ?key_string
+    ~httpaf_config
     ~builtins
     user's_dream_handler =
 
@@ -509,6 +517,7 @@ let serve_with_maybe_https
         ~certificate_file:""
         ~key_file:""
         ~builtins
+        ~httpaf_config
         user's_dream_handler
 
     | `OpenSSL | `OCaml_TLS as tls_library ->
@@ -574,6 +583,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ~httpaf_config
           user's_dream_handler
 
       | `Memory (certificate_string, key_string, verbose_or_silent) ->
@@ -602,6 +612,7 @@ let serve_with_maybe_https
           ~certificate_file
           ~key_file
           ~builtins
+          ~httpaf_config
           user's_dream_handler
 
         end
@@ -632,6 +643,7 @@ let serve
     ?(tls = false)
     ?certificate_file
     ?key_file
+    ?(httpaf_config = Httpaf.Config.default)
     ?(builtins = true)
     user's_dream_handler =
 
@@ -646,6 +658,7 @@ let serve
     ?key_file
     ?certificate_string:None
     ?key_string:None
+    ~httpaf_config
     ~builtins
     user's_dream_handler
 
@@ -659,6 +672,7 @@ let run
     ?(tls = false)
     ?certificate_file
     ?key_file
+    ?(httpaf_config = Httpaf.Config.default)
     ?(builtins = true)
     ?(greeting = true)
     ?(adjust_terminal = true)
@@ -736,6 +750,7 @@ let run
         ~tls:(if tls then `OpenSSL else `No)
         ?certificate_file ?key_file
         ?certificate_string:None ?key_string:None
+        ~httpaf_config
         ~builtins
         user's_dream_handler
     end;

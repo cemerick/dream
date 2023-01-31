@@ -2200,6 +2200,7 @@ val run :
   ?tls:bool ->
   ?certificate_file:string ->
   ?key_file:string ->
+  ?httpaf_config:Dream_httpaf_.Httpaf.Config.t ->
   ?builtins:bool ->
   ?greeting:bool ->
   ?adjust_terminal:bool ->
@@ -2240,6 +2241,9 @@ val run :
       but are required for production. Dream will write a warning to the log if
       you are using [~tls], don't provide [~certificate_file] and [~key_file],
       and [~interface] is not ["localhost"].
+    - [~httpaf_config] is an [Httpaf.Config.t] value that is passed along to
+      Httpaf to control buffer sizes used when parsing and building
+      e.g. websocket messages
     - [~builtins:false] disables {!section-builtin}.
 
     The remaining arguments can be used to gradually disable convenience
@@ -2259,6 +2263,7 @@ val serve :
   ?tls:bool ->
   ?certificate_file:string ->
   ?key_file:string ->
+  ?httpaf_config:Dream_httpaf_.Httpaf.Config.t ->
   ?builtins:bool ->
     handler -> unit promise
 (** Like {!Dream.run}, but returns a promise that does not resolve until the
